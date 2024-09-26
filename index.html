@@ -48,16 +48,21 @@
 
         socket.on('chat message', (msg) => {            //create visual html element for every chat message.
             const item = document.createElement('li');
-            item.textContent = msg;
-            messages.appendChild(item);
-            window.scrollTo(0, document.body.scrollHeight);
+
             const string = msg;
-            if (string.includes('Собеседник')){}         //statment to prevent recursive sending of recieved message
-            else {
-              sendmsg(msg);     //send message func
+            if (string.includes('Собеседник')){         //statment to prevent recursive sending of recieved message
+              item.textContent = `${msg}`;
+              messages.appendChild(item);            
             }
+            else {
+            item.textContent = `--${msg}`;
+            messages.appendChild(item);
+            sendmsg(msg);     //send message func
+            }
+            window.scrollTo(0, document.body.scrollHeight);              
+
           });
-          
+
         function sendmsg(msg) {       //function to send message via fetch request
           let response = '';
           if (msg != null && msg != undefined) 
@@ -75,7 +80,7 @@
             .then(response =>{
              console.log('res status',response.status, response.body);
              if (response.status == 200){
-               return response.json();
+               return response.statusText;
              }
              else {
                throw new Error('error');
