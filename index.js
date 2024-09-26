@@ -1,14 +1,14 @@
-
-import cors from 'cors';
 import { Server } from 'socket.io';
 import { join } from 'path';
 import express from 'express';
-import bodyParser from 'body-parser';
 import { createServer, request } from 'http';
-import require from 'express';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { hostname } from 'os';
+import { networkInterfaces } from 'os';
+import { connect } from 'http2';
 
+const interfaces = networkInterfaces();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const app = express();
@@ -20,31 +20,18 @@ const io = new Server(server, {
 
 app.use(express.json());
 
+const port = 3400; //port to create server
+
+
 ////////////////////////////////////////////////
 //REST STUFF
-
-
-
-app.get('/chat', (req, res) => {
-    res.sendFile(join(__dirname, 'indexvl.html'));
+app.get('/chat', (req, res) => {                    //chat page
+    res.sendFile(join(__dirname, 'index.html'));
 });
 
-
-app.get('/home', (req, res) => {
-    console.log('[GET ROUTE]');
-    res.sendFile(join(__dirname, 'home.html'));
-});
-
-
-app.use('/home', function (request, response) {
-    Response.redirect('chat');
-});
-
-
-app.get('/name', (req, res) => {
-    const hostName = require('os').hostname();
-    const interfaces = require('os').networkInterfaces();
+app.get('/name', (req, res) => {        //returns json with server host nsme and ip 
     let ipAdress = '';
+    var hostNAME = hostname();
     for (const networkInterface of Object.values(interfaces)) {
         for (const adress of networkInterface) {
             if (adress.family === 'IPv4' && !adress.internal) {
@@ -54,14 +41,14 @@ app.get('/name', (req, res) => {
         }
     }
     res.json({
-        hostname: hostName,
+        hostname: hostNAME,
         ipAdress: ipAdress
     });
 });
 
 
-app.post('/message', (req, res) => {
-    const message = req.body.message;
+app.post('/message', (req, res) => {                            //recieves message with POST request body in JSON format: {"message": "text"}
+    const message = req.body.message;   
     io.emit('chat message', `Собеседник: ${message}`);
     if (!message) {
         return res.status(400).json({
@@ -69,15 +56,14 @@ app.post('/message', (req, res) => {
        }
     console.log('Recieved Message:', message);
     res.status(200).json({ message: 'Message recieved' });
-});
 
+}); 
 //END OF REST STUFF
 ///////////////////////////////////////////////
 
+                     
 
-
-
-io.on('connection', (socket) => {
+io.on('connection', (socket) => {                           //write "user connected" or "disconnected" 
     console.log('a user connected');
     io.emit('chat message', 'user connected');
     socket.on('disconnect', () => {
@@ -87,22 +73,18 @@ io.on('connection', (socket) => {
     });
 });
 
-io.on('connection', (socket) => {
+io.on('connection', (socket) => {                           //logs chat message
     socket.on('chat message', (msg) => {
         console.log('log: chat message: ' + msg);
     });
 });
 
-io.on('connection', (socket) => {
-    socket.broadcast.emit('hi');
-});
-
-io.on('connection', (socket) => {
+io.on('connection', (socket) => {                           //recieves chat message from client socket and emits it to other connected sockets
     socket.on('chat message', (msg) => {
         io.emit('chat message', msg);
     });
 });
 
-server.listen(3400, () => {
-    console.log('----------------3 server running at http://localhost:3400');
+server.listen(port, () => {
+    console.log(`----------------3 server running at http://localhost:${port}`);
 });

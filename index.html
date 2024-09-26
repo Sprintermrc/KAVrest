@@ -21,7 +21,6 @@
     <form id="form" action="">
       <input id="input" autocomplete="off" />
       <button id="send-btn">Send</button>
-      <button id="toggle-btn">Disconnect</button>
       <button id="funny-btn" onclick="test()">Funny Button</button>
     </form>
     <script src="/socket.io/socket.io.js"></script>
@@ -29,25 +28,7 @@
 
       const funnybtn = document.getElementById('funny-btn');
       const toggleButton = document.getElementById('toggle-btn');
-
-
-
-        toggleButton.addEventListener('click', (e) => {
-          e.preventDefault();
-          if (socket.connected) {
-            toggleButton.innerText = 'Connect';
-            socket.disconnect();
-          } else {
-            toggleButton.innerText = 'Disconnect';
-            socket.connect();
-          }
-          socket.on('chat message', (msg) => {
-            const item = document.createElement('li');
-            item.textContent = msg;
-            messages.appendChild(item);
-            window.scrollTo(0, document.body.scrollHeight);
-          });
-        });
+    
       </script>
       <script>
         const socket = io();
@@ -57,7 +38,7 @@
         const messages = document.getElementById('messages');
         const sendbutton = document.getElementById('send-btn');
 
-        form.addEventListener('submit', (e) => {
+        form.addEventListener('submit', (e) => {          //gives actual inputed text to chat message
             e.preventDefault();
             if (input.value) {
                 socket.emit('chat message', input.value);
@@ -65,35 +46,27 @@
             }
         });
 
-        socket.on('chat message', (msg) => {   
+        socket.on('chat message', (msg) => {            //create visual html element for every chat message.
             const item = document.createElement('li');
             item.textContent = msg;
             messages.appendChild(item);
             window.scrollTo(0, document.body.scrollHeight);
             const string = msg;
-            if (string.includes('Собеседник')){
-
-            }
+            if (string.includes('Собеседник')){}         //statment to prevent recursive sending of recieved message
             else {
-              sendmsg(msg);
+              sendmsg(msg);     //send message func
             }
-            });
-        socket.on('chat message', (msg) => {            
-          console.log(msg, '--------:message log');
           });
-
-
-        function sendmsg(msg) {
+          
+        function sendmsg(msg) {       //function to send message via fetch request
           let response = '';
           if (msg != null && msg != undefined) 
           {
             const data = JSON.stringify({
               message: msg
             });
-            fetch('http://localhost:3200/message', {
+            fetch('http://172.29.13.124:5273/message', {
              method: 'POST',
-             host: 'localhost',
-             port: '3200',
              headers: {
                'Content-Type': 'application/json'
              },
@@ -113,7 +86,9 @@
            .catch(error => {console.error('error: ', error);});
           }
         }
-         function test(){
+
+
+        function test(){         //sends 5000 requests trough sendmsg() func and counts elapsed time (probably)
           const startTime = Date.now();
           const promises = [];
           const jsondata = JSON.stringify({
@@ -121,19 +96,16 @@
           })          
           for (let i = 0; i < 5000; i++)
           {
-            promises.push(new Promise((resolve, reject)=> {
-              
+            promises.push(new Promise((resolve, reject)=> { 
               sendmsg(jsondata);
-
             }));
-
           }
-            Promise.all(promises).then((responses) => {
-            const endTime = Date.now();
-            const elapsedTime = endTime - startTime;
-            console.log('1000 POST запросов заняла: ', elapsedTime);
-            console.error(elapsedTime, 'milisecond elapsed ');              
-            });
+          Promise.all(promises).then((responses) => {
+          const endTime = Date.now();
+          const elapsedTime = endTime - startTime;
+          console.log('5000 POST запросов заняло: ', elapsedTime);
+          console.error(elapsedTime, 'milisecond elapsed ');              
+          });
         }
         
     </script>
